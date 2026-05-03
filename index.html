@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>Chi Tiêu</title>
+
+  <!-- Web App Manifest (PWA) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Chi Tiêu" />
+  <meta name="theme-color" content="#f5f0e8" />
+
+  <!-- Icon SVG inline as data URI -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23e85d2f'/><text x='32' y='44' font-size='32' text-anchor='middle'>💸</text></svg>" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23e85d2f'/><text x='32' y='44' font-size='32' text-anchor='middle'>💸</text></svg>" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --ink: #1a1a1a; --paper: #f5f0e8; --cream: #ede8dc;
+      --accent: #e85d2f; --accent2: #2d6a4f; --muted: #888070; --line: rgba(26,26,26,0.12);
+    }
+    html, body { min-height: 100%; background: var(--paper); font-family: 'Syne', sans-serif; color: var(--ink); }
+    .app { max-width: 480px; margin: 0 auto; padding: 1.5rem 1rem 6rem; }
+
+    /* Header */
+    .header { margin-bottom: 1.25rem; animation: fadeUp 0.5s ease both; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .title { font-size: 28px; font-weight: 800; line-height: 1.1; letter-spacing: -0.5px; }
+    .title span { color: var(--accent); }
+    .month-badge { background: var(--ink); color: var(--paper); font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 999px; font-family: 'DM Mono', monospace; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    /* Summary */
+    .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; animation: fadeUp 0.5s 0.1s ease both; }
+    .sum-card { background: var(--cream); border-radius: 14px; padding: 14px 16px; border: 1px solid var(--line); }
+    .sum-card.accent { background: var(--accent); color: white; border-color: transparent; }
+    .sum-card.accent .sum-label { color: rgba(255,255,255,0.75); }
+    .sum-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .sum-value { font-size: 20px; font-weight: 700; font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+
+    /* Budget */
+    .budget-section { background: white; border-radius: 14px; border: 1px solid var(--line); padding: 14px 16px; margin-bottom: 1rem; animation: fadeUp 0.5s 0.15s ease both; }
+    .budget-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .budget-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+    .budget-edit-btn { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 6px; padding: 3px 10px; cursor: pointer; transition: all 0.15s; }
+    .budget-edit-btn:hover { color: var(--ink); border-color: var(--ink); }
+    .budget-numbers { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+    .budget-spent { font-size: 18px; font-weight: 700; font-family: 'DM Mono', monospace; }
+    .budget-limit { font-size: 13px; color: var(--muted); font-family: 'DM Mono', monospace; }
+    .progress-track { height: 8px; background: var(--cream); border-radius: 999px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 999px; transition: width 0.5s ease, background 0.3s; }
+    .budget-remaining { font-size: 12px; color: var(--muted); margin-top: 6px; }
+    .budget-remaining.warn { color: #c05000; }
+    .budget-remaining.over { color: var(--accent); font-weight: 600; }
+    .budget-form { display: flex; gap: 8px; margin-top: 10px; }
+    .budget-input { flex: 1; border: 1.5px solid var(--line); border-radius: 8px; padding: 10px 12px; font-family: 'DM Mono', monospace; font-size: 14px; color: var(--ink); background: var(--paper); outline: none; transition: border-color 0.2s; }
+    .budget-input:focus { border-color: var(--accent); }
+    .budget-save-btn { padding: 10px 16px; background: var(--ink); color: var(--paper); border: none; border-radius: 8px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; }
+    .hidden { display: none !important; }
+
+    /* Input */
+    .input-area { background: white; border-radius: 16px; border: 1px solid var(--line); padding: 1rem; margin-bottom: 1.25rem; animation: fadeUp 0.5s 0.2s ease both; }
+    .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .input-text { flex: 1; border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 14px; font-family: 'Syne', sans-serif; font-size: 15px; color: var(--ink); background: var(--paper); outline: none; transition: border-color 0.2s; }
+    .input-text:focus { border-color: var(--accent); }
+    .input-text::placeholder { color: var(--muted); }
+    .input-amount { width: 110px; border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 12px; font-family: 'DM Mono', monospace; font-size: 15px; color: var(--ink); background: var(--paper); outline: none; transition: border-color 0.2s; }
+    .input-amount:focus { border-color: var(--accent); }
+    .cats { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+    .cat-btn { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); color: var(--muted); cursor: pointer; transition: all 0.15s; }
+    .cat-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .add-btn { width: 100%; padding: 13px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: transform 0.1s, opacity 0.1s; }
+    .add-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+    /* Chart */
+    .chart-wrap { margin-bottom: 1.25rem; animation: fadeUp 0.5s 0.25s ease both; }
+    .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 10px; }
+    .chart-bars { display: flex; align-items: flex-end; gap: 6px; height: 70px; margin-bottom: 6px; }
+    .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .bar { width: 100%; border-radius: 6px 6px 0 0; background: var(--cream); transition: height 0.4s ease; min-height: 4px; }
+    .bar.has-data { background: var(--accent2); }
+    .bar.today { background: var(--accent); }
+    .bar-label { font-size: 10px; font-family: 'DM Mono', monospace; color: var(--muted); }
+
+    /* Filter */
+    .filter-wrap { margin-bottom: 1rem; animation: fadeUp 0.5s 0.3s ease both; }
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .filter-btn { font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: var(--paper); color: var(--muted); cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+    .filter-btn.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .filter-count { font-size: 10px; opacity: 0.6; }
+
+    /* Export */
+    .export-btn { width: 100%; padding: 12px; background: var(--cream); color: var(--ink); border: 1.5px solid var(--line); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1.25rem; animation: fadeUp 0.5s 0.32s ease both; }
+    .export-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .export-btn.copied { background: var(--accent2); color: white; border-color: transparent; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--ink); color: var(--paper); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 999px; opacity: 0; transition: all 0.3s ease; pointer-events: none; white-space: nowrap; z-index: 99; }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* Entries */
+    .entries { animation: fadeUp 0.5s 0.35s ease both; }
+    .entry { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--line); animation: slideIn 0.3s ease both; }
+    .entry:last-child { border-bottom: none; }
+    .entry-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+    .entry-info { flex: 1; min-width: 0; }
+    .entry-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .entry-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .entry-amount { font-family: 'DM Mono', monospace; font-size: 14px; font-weight: 500; flex-shrink: 0; }
+    .entry-del { background: none; border: none; color: var(--line); cursor: pointer; font-size: 20px; padding: 6px; line-height: 1; transition: color 0.15s; border-radius: 6px; }
+    .entry-del:hover { color: var(--accent); }
+    .empty { text-align: center; padding: 2.5rem 0; color: var(--muted); font-size: 14px; }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* Mobile tweaks */
+    @media (max-width: 400px) {
+      .title { font-size: 24px; }
+      .input-amount { width: 95px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div class="title">Chi tiêu<br><span>hôm nay</span></div>
+      <span class="month-badge" id="monthBadge"></span>
+    </div>
+  </div>
+
+  <div class="summary">
+    <div class="sum-card accent">
+      <div class="sum-label">Hôm nay</div>
+      <div class="sum-value" id="todayTotal">0đ</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">Tháng này</div>
+      <div class="sum-value" id="monthTotal">0đ</div>
+    </div>
+  </div>
+
+  <div class="budget-section">
+    <div class="budget-header">
+      <span class="budget-title">Ngân sách tháng</span>
+      <button class="budget-edit-btn" onclick="toggleBudgetForm()">✏️ Đặt ngân sách</button>
+    </div>
+    <div id="budgetDisplay">
+      <div class="budget-numbers">
+        <span class="budget-spent" id="budgetSpent">0đ</span>
+        <span class="budget-limit" id="budgetLimit">/ chưa đặt</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%;background:#2d6a4f"></div></div>
+      <div class="budget-remaining" id="budgetRemaining">Đặt ngân sách để theo dõi mức chi tiêu</div>
+    </div>
+    <div class="budget-form hidden" id="budgetForm">
+      <input class="budget-input" id="budgetInput" placeholder="vd: 3tr, 2000000" inputmode="text" />
+      <button class="budget-save-btn" onclick="saveBudget()">Lưu</button>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-row">
+      <input class="input-text" id="nameInput" placeholder="cà phê, xăng, ăn trưa..." autocomplete="off" />
+      <input class="input-amount" id="amountInput" placeholder="35k" inputmode="text" autocomplete="off" />
+    </div>
+    <div class="cats" id="catBtns"></div>
+    <button class="add-btn" onclick="addEntry()">+ Thêm khoản chi</button>
+  </div>
+
+  <div class="chart-wrap">
+    <div class="section-title">7 ngày gần nhất</div>
+    <div class="chart-bars" id="chartBars"></div>
+  </div>
+
+  <div class="filter-wrap">
+    <div class="section-title">Lọc theo danh mục</div>
+    <div class="filter-row" id="filterRow"></div>
+  </div>
+
+  <button class="export-btn" id="exportBtn" onclick="exportReport()">📋 Sao chép báo cáo tháng này</button>
+
+  <div class="entries">
+    <div class="section-title" id="entriesTitle">Hôm nay</div>
+    <div id="entryList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATS = [
+  { label: 'Ăn uống',   icon: '🍜', color: '#fff3e0' },
+  { label: 'Di chuyển', icon: '🛵', color: '#e8f5e9' },
+  { label: 'Mua sắm',   icon: '🛍️', color: '#fce4ec' },
+  { label: 'Giải trí',  icon: '🎮', color: '#ede7f6' },
+  { label: 'Sức khoẻ',  icon: '💊', color: '#e0f7fa' },
+  { label: 'Khác',      icon: '📦', color: '#f5f0e8' },
+];
+
+let entries = [], selectedCat = 'Ăn uống', filterCat = 'Tất cả', budget = 0, budgetFormOpen = false;
+try { entries = JSON.parse(localStorage.getItem('chitieu_entries') || '[]'); } catch(e) {}
+try { budget = parseInt(localStorage.getItem('chitieu_budget') || '0'); } catch(e) {}
+
+function save() { try { localStorage.setItem('chitieu_entries', JSON.stringify(entries)); } catch(e) {} }
+
+function parseAmount(raw) {
+  if (!raw) return 0;
+  raw = raw.trim().toLowerCase().replace(/,/g,'').replace(/\./g,'');
+  const m = raw.match(/^(\d+(?:\.\d+)?)\s*(k|tr|triệu|trieu|m)?$/);
+  if (!m) return 0;
+  const n = parseFloat(m[1]);
+  if (m[2]==='k') return n*1000;
+  if (['tr','triệu','trieu','m'].includes(m[2])) return n*1000000;
+  return n;
+}
+
+function fmt(n) {
+  if (n>=1000000) return (n/1000000).toFixed(n%1000000===0?0:1).replace('.0','')+'tr';
+  if (n>=1000) return Math.round(n/1000)+'k';
+  return n+'đ';
+}
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function toggleBudgetForm() {
+  budgetFormOpen = !budgetFormOpen;
+  document.getElementById('budgetForm').classList.toggle('hidden', !budgetFormOpen);
+  if (budgetFormOpen) document.getElementById('budgetInput').focus();
+}
+
+function saveBudget() {
+  const val = parseAmount(document.getElementById('budgetInput').value);
+  if (!val) return;
+  budget = val;
+  try { localStorage.setItem('chitieu_budget', val); } catch(e) {}
+  budgetFormOpen = false;
+  document.getElementById('budgetForm').classList.add('hidden');
+  document.getElementById('budgetInput').value = '';
+  render();
+}
+
+function renderCats() {
+  document.getElementById('catBtns').innerHTML = CATS.map(c =>
+    `<button class="cat-btn${c.label===selectedCat?' active':''}" onclick="selectCat('${c.label}')">${c.icon} ${c.label}</button>`
+  ).join('');
+}
+
+function selectCat(name) { selectedCat = name; renderCats(); }
+
+function addEntry() {
+  const name = document.getElementById('nameInput').value.trim();
+  const amount = parseAmount(document.getElementById('amountInput').value);
+  if (!name || !amount) { document.getElementById(name?'amountInput':'nameInput').focus(); return; }
+  const cat = CATS.find(c=>c.label===selectedCat)||CATS[5];
+  entries.unshift({ id: Date.now(), name, amount, cat: cat.label, icon: cat.icon, color: cat.color, date: todayStr(), time: new Date().toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'}) });
+  save();
+  document.getElementById('nameInput').value = '';
+  document.getElementById('amountInput').value = '';
+  document.getElementById('nameInput').focus();
+  render();
+}
+
+function deleteEntry(id) { entries = entries.filter(e=>e.id!==id); save(); render(); }
+
+function exportReport() {
+  const now = new Date();
+  const monthStr = now.toISOString().slice(0,7);
+  const monthEntries = entries.filter(e=>e.date.startsWith(monthStr));
+  if (!monthEntries.length) { showToast('Chưa có dữ liệu tháng này'); return; }
+
+  const monthSum = monthEntries.reduce((s,e)=>s+e.amount,0);
+  const monthLabel = now.toLocaleDateString('vi-VN',{month:'long',year:'numeric'});
+  const byCat = {};
+  CATS.forEach(c => { byCat[c.label] = { icon: c.icon, total: 0, count: 0 }; });
+  monthEntries.forEach(e => {
+    if (!byCat[e.cat]) byCat[e.cat] = { icon: '📦', total: 0, count: 0 };
+    byCat[e.cat].total += e.amount; byCat[e.cat].count++;
+  });
+  const byDate = {};
+  monthEntries.forEach(e => { if (!byDate[e.date]) byDate[e.date]=[]; byDate[e.date].push(e); });
+
+  let text = `📊 BÁO CÁO CHI TIÊU — ${monthLabel.toUpperCase()}\n${'─'.repeat(34)}\n\n`;
+  text += `💰 Tổng chi tiêu: ${fmt(monthSum)}\n`;
+  if (budget>0) {
+    const rem = budget-monthSum, pct = Math.round(monthSum/budget*100);
+    text += `🎯 Ngân sách: ${fmt(budget)} (đã dùng ${pct}%)\n`;
+    text += rem>=0 ? `✅ Còn lại: ${fmt(rem)}\n` : `⚠️ Vượt ngân sách: ${fmt(Math.abs(rem))}\n`;
+  }
+  text += `\n📂 THEO DANH MỤC\n${'─'.repeat(20)}\n`;
+  Object.entries(byCat).filter(([,v])=>v.total>0).sort((a,b)=>b[1].total-a[1].total).forEach(([label,v]) => {
+    text += `${v.icon} ${label}: ${fmt(v.total)} (${Math.round(v.total/monthSum*100)}%) — ${v.count} khoản\n`;
+  });
+  text += `\n📅 THEO NGÀY\n${'─'.repeat(20)}\n`;
+  Object.keys(byDate).sort((a,b)=>b.localeCompare(a)).forEach(date => {
+    const d = new Date(date);
+    text += `\n${d.toLocaleDateString('vi-VN',{weekday:'short',day:'numeric',month:'numeric'})} — ${fmt(byDate[date].reduce((s,e)=>s+e.amount,0))}\n`;
+    byDate[date].forEach(e => { text += `  ${e.icon} ${e.name}: ${fmt(e.amount)}\n`; });
+  });
+  text += `\n${'─'.repeat(17)}\nXuất lúc ${now.toLocaleTimeString('vi-VN',{hour:'2-digit',minute:'2-digit'})} ${now.toLocaleDateString('vi-VN')}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('exportBtn');
+    btn.classList.add('copied'); btn.textContent = '✅ Đã sao chép!';
+    showToast('Đã sao chép báo cáo vào clipboard');
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '📋 Sao chép báo cáo tháng này'; }, 2500);
+  }).catch(() => {
+    // Fallback for Safari
+    const ta = document.createElement('textarea');
+    ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand('copy'); showToast('Đã sao chép báo cáo!'); } catch(e) { showToast('Không thể sao chép, thử lại nhé'); }
+    document.body.removeChild(ta);
+  });
+}
+
+function setFilter(cat) { filterCat = cat; render(); }
+
+function render() {
+  const today = todayStr(), monthStr = new Date().toISOString().slice(0,7);
+  const todayEntries = entries.filter(e=>e.date===today);
+  const monthEntries = entries.filter(e=>e.date.startsWith(monthStr));
+  const todaySum = todayEntries.reduce((s,e)=>s+e.amount,0);
+  const monthSum = monthEntries.reduce((s,e)=>s+e.amount,0);
+
+  document.getElementById('todayTotal').textContent = fmt(todaySum);
+  document.getElementById('monthTotal').textContent = fmt(monthSum);
+  document.getElementById('monthBadge').textContent = new Date().toLocaleDateString('vi-VN',{month:'long',year:'numeric'});
+
+  document.getElementById('budgetSpent').textContent = fmt(monthSum);
+  if (budget>0) {
+    const pct = Math.min(monthSum/budget*100,100), rem = budget-monthSum;
+    document.getElementById('budgetLimit').textContent = '/ '+fmt(budget);
+    const fill = document.getElementById('progressFill');
+    fill.style.width = pct+'%';
+    fill.style.background = pct>=100?'#e85d2f':pct>=80?'#e07b00':'#2d6a4f';
+    const remEl = document.getElementById('budgetRemaining');
+    if (rem<0) { remEl.textContent='Đã vượt ngân sách '+fmt(Math.abs(rem)); remEl.className='budget-remaining over'; }
+    else if (pct>=80) { remEl.textContent='Còn lại '+fmt(rem)+' — sắp hết ngân sách'; remEl.className='budget-remaining warn'; }
+    else { remEl.textContent='Còn lại '+fmt(rem)+' ('+Math.round(100-pct)+'%)'; remEl.className='budget-remaining'; }
+  } else {
+    document.getElementById('budgetLimit').textContent='/ chưa đặt';
+    document.getElementById('progressFill').style.width='0%';
+    document.getElementById('budgetRemaining').textContent='Đặt ngân sách để theo dõi mức chi tiêu';
+    document.getElementById('budgetRemaining').className='budget-remaining';
+  }
+
+  const days=[];
+  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);days.push({ds,sum:entries.filter(e=>e.date===ds).reduce((s,e)=>s+e.amount,0),label:d.toLocaleDateString('vi-VN',{weekday:'narrow'})});}
+  const max=Math.max(...days.map(d=>d.sum),1);
+  document.getElementById('chartBars').innerHTML=days.map(d=>
+    `<div class="bar-col"><div class="bar${d.sum>0?' has-data':''}${d.ds===today?' today':''}" style="height:${Math.round((d.sum/max)*60)+4}px" title="${fmt(d.sum)}"></div><span class="bar-label">${d.label}</span></div>`
+  ).join('');
+
+  const filterBtns=[{label:'Tất cả',icon:'📋',count:todayEntries.length}];
+  CATS.forEach(c=>{const cnt=todayEntries.filter(e=>e.cat===c.label).length;if(cnt>0)filterBtns.push({label:c.label,icon:c.icon,count:cnt});});
+  document.getElementById('filterRow').innerHTML=filterBtns.map(f=>
+    `<button class="filter-btn${f.label===filterCat?' active':''}" onclick="setFilter('${f.label}')">${f.icon} ${f.label} <span class="filter-count">${f.count}</span></button>`
+  ).join('');
+
+  let filtered = filterCat==='Tất cả' ? todayEntries : todayEntries.filter(e=>e.cat===filterCat);
+  if(filterCat!=='Tất cả'){const co=CATS.find(c=>c.label===filterCat);document.getElementById('entriesTitle').textContent=`${co?.icon||''} ${filterCat} — ${fmt(filtered.reduce((s,e)=>s+e.amount,0))}`;}
+  else document.getElementById('entriesTitle').textContent='Hôm nay';
+
+  const list=document.getElementById('entryList');
+  if(!filtered.length){list.innerHTML=`<div class="empty"><div class="empty-icon">${filterCat==='Tất cả'?'📒':'🔍'}</div>${filterCat==='Tất cả'?'Chưa có khoản chi nào hôm nay':'Không có khoản chi nào trong danh mục này'}</div>`;return;}
+  list.innerHTML=filtered.map(e=>
+    `<div class="entry"><div class="entry-icon" style="background:${e.color}">${e.icon}</div><div class="entry-info"><div class="entry-name">${e.name}</div><div class="entry-meta">${e.cat} · ${e.time}</div></div><div class="entry-amount">−${fmt(e.amount)}</div><button class="entry-del" onclick="deleteEntry(${e.id})" title="Xoá">×</button></div>`
+  ).join('');
+}
+
+document.getElementById('amountInput').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry();});
+document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('amountInput').focus();});
+document.getElementById('budgetInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveBudget();});
+renderCats(); render();
+</script>
+</body>
+</html>
