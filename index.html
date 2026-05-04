@@ -100,6 +100,18 @@
     .export-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
     .export-btn.copied { background: var(--accent2); color: white; border-color: transparent; }
 
+    /* Export section */
+    .export-section { background: white; border-radius: 14px; border: 1px solid var(--line); padding: 14px 16px; margin-bottom: 1rem; animation: fadeUp 0.5s 0.33s ease both; display: flex; flex-direction: column; gap: 12px; }
+    .export-header { display: flex; justify-content: space-between; align-items: center; }
+    .month-picker { display: flex; align-items: center; gap: 6px; }
+    .mpick-arrow { background: none; border: 1px solid var(--line); border-radius: 6px; width: 28px; height: 28px; font-size: 16px; cursor: pointer; color: var(--ink); display: flex; align-items: center; justify-content: center; transition: all 0.15s; line-height: 1; }
+    .mpick-arrow:hover { background: var(--cream); }
+    .mpick-arrow:disabled { opacity: 0.3; cursor: default; }
+    .mpick-label { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: var(--ink); min-width: 80px; text-align: center; }
+    .export-btn { width: 100%; padding: 12px; background: var(--cream); color: var(--ink); border: 1.5px solid var(--line); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 1rem; animation: fadeUp 0.5s 0.32s ease both; }
+    .export-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .export-btn.copied { background: var(--accent2); color: white; border-color: transparent; }
+
     /* Danger zone */
     .danger-zone { margin-bottom: 1.25rem; animation: fadeUp 0.5s 0.34s ease both; }
     .clear-btn { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1.5px dashed var(--line); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
@@ -204,7 +216,17 @@
     <div class="filter-row" id="filterRow"></div>
   </div>
 
-  <button class="export-btn" id="exportBtn" onclick="exportReport()">📋 Sao chép báo cáo tháng này</button>
+  <div class="export-section">
+    <div class="export-header">
+      <div class="section-title" style="margin:0">Xuất báo cáo</div>
+      <div class="month-picker">
+        <button class="mpick-arrow" onclick="shiftMonth(-1)">‹</button>
+        <span class="mpick-label" id="mpickLabel"></span>
+        <button class="mpick-arrow" onclick="shiftMonth(1)" id="mpickNext">›</button>
+      </div>
+    </div>
+    <button class="export-btn" id="exportBtn" onclick="exportReport()" style="margin-bottom:0">📋 Sao chép báo cáo</button>
+  </div>
 
   <div class="danger-zone">
     <button class="clear-btn" onclick="showClearModal()">🗑️ Xoá toàn bộ dữ liệu</button>
@@ -240,6 +262,8 @@ const CATS = [
 ];
 
 let entries = [], selectedCat = 'Ăn uống', filterCat = 'Tất cả', budget = 0, budgetFormOpen = false;
+const _n = new Date();
+let selectedMonth = _n.getFullYear() + '-' + String(_n.getMonth()+1).padStart(2,'0');
 try { entries = JSON.parse(localStorage.getItem('chitieu_entries') || '[]'); } catch(e) {}
 try { budget = parseInt(localStorage.getItem('chitieu_budget') || '0'); } catch(e) {}
 
@@ -310,14 +334,38 @@ function addEntry() {
 
 function deleteEntry(id) { entries = entries.filter(e=>e.id!==id); save(); render(); }
 
-function exportReport() {
-  const now = new Date();
-  const monthStr = now.toISOString().slice(0,7);
-  const monthEntries = entries.filter(e=>e.date.startsWith(monthStr));
-  if (!monthEntries.length) { showToast('Chưa có dữ liệu tháng này'); return; }
+function shiftMonth(dir) {
+  let [y, m] = selectedMonth.split('-').map(Number);
+  m += dir;
+  if (m > 12) { m = 1; y++; }
+  if (m < 1)  { m = 12; y--; }
+  selectedMonth = y + '-' + String(m).padStart(2,'0');
+  renderMonthPicker();
+}
 
+function nowMonthStr() {
+  const n = new Date();
+  return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0');
+}
+
+function renderMonthPicker() {
+  const [y, m] = selectedMonth.split('-').map(Number);
+  const label = new Date(y, m-1, 1).toLocaleDateString('vi-VN',{month:'short',year:'numeric'});
+  document.getElementById('mpickLabel').textContent = label;
+  const nextBtn = document.getElementById('mpickNext');
+  nextBtn.disabled = selectedMonth >= nowMonthStr();
+  nextBtn.style.opacity = nextBtn.disabled ? '0.3' : '1';
+  nextBtn.style.cursor = nextBtn.disabled ? 'default' : 'pointer';
+}
+
+function exportReport() {
+  const monthEntries = entries.filter(e=>e.date.startsWith(selectedMonth));
+  if (!monthEntries.length) { showToast('Không có dữ liệu tháng này'); return; }
+
+  const [y, m] = selectedMonth.split('-').map(Number);
+  const now = new Date();
   const monthSum = monthEntries.reduce((s,e)=>s+e.amount,0);
-  const monthLabel = now.toLocaleDateString('vi-VN',{month:'long',year:'numeric'});
+  const monthLabel = new Date(y, m-1, 1).toLocaleDateString('vi-VN',{month:'long',year:'numeric'});
   const byCat = {};
   CATS.forEach(c => { byCat[c.label] = { icon: c.icon, total: 0, count: 0 }; });
   monthEntries.forEach(e => {
@@ -350,7 +398,7 @@ function exportReport() {
     const btn = document.getElementById('exportBtn');
     btn.classList.add('copied'); btn.textContent = '✅ Đã sao chép!';
     showToast('Đã sao chép báo cáo vào clipboard');
-    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '📋 Sao chép báo cáo tháng này'; }, 2500);
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '📋 Sao chép báo cáo'; }, 2500);
   }).catch(() => {
     // Fallback for Safari
     const ta = document.createElement('textarea');
@@ -433,7 +481,7 @@ function render() {
 document.getElementById('amountInput').addEventListener('keydown',e=>{if(e.key==='Enter')addEntry();});
 document.getElementById('nameInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('amountInput').focus();});
 document.getElementById('budgetInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveBudget();});
-renderCats(); render();
+renderCats(); renderMonthPicker(); render();
 </script>
 </body>
 </html>
