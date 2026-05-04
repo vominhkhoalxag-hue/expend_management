@@ -100,6 +100,24 @@
     .export-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
     .export-btn.copied { background: var(--accent2); color: white; border-color: transparent; }
 
+    /* Danger zone */
+    .danger-zone { margin-bottom: 1.25rem; animation: fadeUp 0.5s 0.34s ease both; }
+    .clear-btn { width: 100%; padding: 12px; background: transparent; color: var(--muted); border: 1.5px dashed var(--line); border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .clear-btn:hover { border-color: var(--accent); color: var(--accent); background: #fff5f3; }
+
+    /* Confirm modal */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(26,26,26,0.5); z-index: 200; display: flex; align-items: flex-end; justify-content: center; animation: fadeIn 0.2s ease; }
+    .modal-overlay.hidden { display: none; }
+    .modal { background: var(--paper); border-radius: 20px 20px 0 0; padding: 1.5rem 1.25rem 2rem; width: 100%; max-width: 480px; animation: slideUp 0.25s ease; }
+    .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 6px; }
+    .modal-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 1.25rem; }
+    .modal-btns { display: flex; gap: 10px; }
+    .modal-cancel { flex: 1; padding: 12px; background: var(--cream); color: var(--ink); border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+    .modal-confirm { flex: 1; padding: 12px; background: var(--accent); color: white; border: none; border-radius: 10px; font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
     /* Toast */
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--ink); color: var(--paper); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; padding: 10px 20px; border-radius: 999px; opacity: 0; transition: all 0.3s ease; pointer-events: none; white-space: nowrap; z-index: 99; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -188,9 +206,24 @@
 
   <button class="export-btn" id="exportBtn" onclick="exportReport()">📋 Sao chép báo cáo tháng này</button>
 
+  <div class="danger-zone">
+    <button class="clear-btn" onclick="showClearModal()">🗑️ Xoá toàn bộ dữ liệu</button>
+  </div>
+
   <div class="entries">
     <div class="section-title" id="entriesTitle">Hôm nay</div>
     <div id="entryList"></div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="clearModal" onclick="hideClearModal(event)">
+  <div class="modal">
+    <div class="modal-title">Xoá toàn bộ dữ liệu?</div>
+    <div class="modal-desc">Tất cả khoản chi và ngân sách đã lưu sẽ bị xoá vĩnh viễn. Không thể khôi phục lại.</div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="hideClearModal()">Huỷ</button>
+      <button class="modal-confirm" onclick="clearAllData()">Xoá hết</button>
+    </div>
   </div>
 </div>
 
@@ -326,6 +359,20 @@ function exportReport() {
     try { document.execCommand('copy'); showToast('Đã sao chép báo cáo!'); } catch(e) { showToast('Không thể sao chép, thử lại nhé'); }
     document.body.removeChild(ta);
   });
+}
+
+function showClearModal() { document.getElementById('clearModal').classList.remove('hidden'); }
+function hideClearModal(e) {
+  if (!e || e.target === document.getElementById('clearModal')) {
+    document.getElementById('clearModal').classList.add('hidden');
+  }
+}
+function clearAllData() {
+  try { localStorage.removeItem('chitieu_entries'); localStorage.removeItem('chitieu_budget'); } catch(e) {}
+  entries = []; budget = 0; filterCat = 'Tất cả';
+  document.getElementById('clearModal').classList.add('hidden');
+  showToast('Đã xoá toàn bộ dữ liệu');
+  render();
 }
 
 function setFilter(cat) { filterCat = cat; render(); }
