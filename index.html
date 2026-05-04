@@ -271,13 +271,21 @@ function save() { try { localStorage.setItem('chitieu_entries', JSON.stringify(e
 
 function parseAmount(raw) {
   if (!raw) return 0;
-  raw = raw.trim().toLowerCase().replace(/,/g,'').replace(/\./g,'');
-  const m = raw.match(/^(\d+(?:\.\d+)?)\s*(k|tr|triệu|trieu|m)?$/);
-  if (!m) return 0;
-  const n = parseFloat(m[1]);
-  if (m[2]==='k') return n*1000;
-  if (['tr','triệu','trieu','m'].includes(m[2])) return n*1000000;
-  return n;
+
+  raw = raw.toLowerCase().replace(/\s+/g, '');
+
+  // đổi đơn vị
+  raw = raw.replace(/(\d+(?:\.\d+)?)(k)/g, (_, n) => Number(n) * 1000);
+  raw = raw.replace(/(\d+(?:\.\d+)?)(tr|triệu|trieu|m)/g, (_, n) => Number(n) * 1000000);
+
+  // chỉ cho phép ký tự an toàn
+  if (!/^[0-9+\-*/().]+$/.test(raw)) return 0;
+
+  try {
+    return Math.round(Function(`"use strict"; return (${raw})`)());
+  } catch {
+    return 0;
+  }
 }
 
 function fmt(n) {
