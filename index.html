@@ -500,6 +500,8 @@ function exportReport() {
   let text = `📊 BÁO CÁO CHI TIÊU — ${monthLabel.toUpperCase()}\n${'─'.repeat(34)}\n\n`;
   text += `💰 Tổng chi tiêu: ${fmt(monthSum)}\n`;
   if (budget>0 && selectedMonth === nowMonthStr()) {
+    const rem = budget - monthSum;
+    const pct = Math.round(monthSum / budget * 100);
     text += `🎯 Ngân sách: ${fmt(budget)} (đã dùng ${pct}%)\n`;
     text += rem>=0 ? `✅ Còn lại: ${fmt(rem)}\n` : `⚠️ Vượt ngân sách: ${fmt(Math.abs(rem))}\n`;
   }
